@@ -26,7 +26,8 @@ class Icon:
         try:
             return self.icons[name]
         except:
-            return ''
+            print '[info] unknown icon of ' + name
+            return 'icons/unknown.png'
 
 
 class Excel:
