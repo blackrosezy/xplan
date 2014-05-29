@@ -261,6 +261,12 @@ class XPlan:
         f.write(self.get_xml())
         f.close()
 
+        try:
+            shutil.copyfile('page.zip', output_zip)
+            Util.append_to_zip(output_zip, xml_file)
+        except Exception as e:
+            print '[zip:error] ' + str(e)
+
 
     def extract_objects(self):
         self.xplan_object = XPlanObject()
