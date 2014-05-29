@@ -210,8 +210,20 @@ class Excel:
                     val = base64.b64encode(new_data['d_value'])
                     xplan_item.set_x_value_in_base64(val)
 
-                    xplan_item.set_x_object_type(original_data['x_object_type'])
-                    xplan_item.set_x_condition_category(original_data['x_condition_category'])
+                    #  set object type
+                    object_type = original_data['x_object_type']
+                    xplan_item.set_x_object_type(object_type)
+
+                    #  set condition category (guess??)
+                    condition_category = original_data['x_condition_category']
+                    if object_type == 'SubPage' and condition_category == '':
+                        condition_category = 'Condition'
+                    elif object_type != 'SubPage' and condition_category == '':
+                        condition_category = 'FieldConditionStore'
+
+                    xplan_item.set_x_condition_category(condition_category)
+
+                    #  set other fields
                     xplan_item.set_x_field(original_data['x_field'])
                     xplan_item.set_x_group(original_data['x_group'])
                     xplan_item.set_x_operator(original_data['x_operator'])
