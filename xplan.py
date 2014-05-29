@@ -31,23 +31,6 @@ class Condition:
             return -100
 
 
-class SubPageCondition(Condition):
-    def __init__(self):
-        self.conditions = {'Client Conditions': 0,
-                           'Partner Conditions': 1,
-                           'Client Scenario Conditions': 3,
-                           'Partner Scenario Conditions': 4,
-                           'User Conditions': 2}
-
-
-class OtherCondition(Condition):
-    def __init__(self):
-        self.conditions = {'Entity Conditions': 0,
-                           'Partner Conditions': 1,
-                           'Entity Scenario Conditions': 3,
-                           'Partner Scenario Conditions': 4}
-
-
 class Operation:
     def __init__(self):
         self.operations = {'Equal': 0,
@@ -86,6 +69,23 @@ class Operation:
             return self.operations[key]
         except:
             return -100
+
+
+class SubPageCondition(Condition):
+    def __init__(self):
+        self.conditions = {'Client Conditions': 0,
+                           'Partner Conditions': 1,
+                           'Client Scenario Conditions': 3,
+                           'Partner Scenario Conditions': 4,
+                           'User Conditions': 2}
+
+
+class OtherCondition(Condition):
+    def __init__(self):
+        self.conditions = {'Entity Conditions': 0,
+                           'Partner Conditions': 1,
+                           'Entity Scenario Conditions': 3,
+                           'Partner Scenario Conditions': 4}
 
 
 class XPlanItem:
@@ -157,6 +157,13 @@ class XPlanObject:
     def append_item(self, new_item):
         self.obj.append(new_item)
 
+    def get_item_by_reference(self, str_reference):
+        #for item in self.obj:
+        #    i = item.get_item()
+        #    if i['reference'] == str_reference:
+        #        return i
+        return [i for i in self.obj if i.get_item()['d_reference'] == str_reference]
+
     def get_obj(self):
         obj = self.obj
         #obj.reverse()
@@ -211,23 +218,48 @@ class XPlan:
 
         return True
 
+    def __append_new_data(self, soap_node, data):
+        condition_type = data['d_condition_type']
+        if condition_type == -100:
+            return
+
+        condition_category = data['x_condition_category']
+
+        pos = 0
+        for type_list in soap_node.find_all('object', attrs={"type": "List"}):
+            if pos == condition_type:
+                if condition_category == 'Condition':
+                    type_list.append(self.get_Condition(data))
+                elif condition_category == 'FieldConditionStore':
+                    type_list.append(self.get_FieldConditionStore(data))
+            pos = pos + 1
+
     def generate_zip_file(self, xplan_object):
-        pass
-        #name = os.path.splitext(os.path.basename(self.filename))[0]
-        #output_zip = name + '_new.zip'
-        #object_file = name + '_obj.xml'
-        #
-        #print 'Loading object file...'
-        #self.soup = BeautifulSoup(open(object_file).read())
-        #
-        #for object in self.soup.find_all("conditions", attrs={"type": "List"}):
-        #    reference = object.get('unique_local_key')
-        #    list = [i for i in xls_obj if i['reference'] == reference]
-        #    if not list:
-        #        continue
-        #
-        #    #if list['condition_type'] ==
-        #    print list
+        self.xplan_object = xplan_object
+        print 'Loading object file...'
+        name = os.path.splitext(os.path.basename(self.filename))[0]
+        object_file = name + '_obj.xml'
+        self.soup = BeautifulSoup(open(object_file).read())
+
+        print 'Updating object file...'
+        for object in self.soup.find_all("conditions", attrs={"type": "List"}):
+            reference = object.get('reference')
+            if not reference:
+                continue
+
+            self.__clear_conditions(object)
+
+            for xplan_item in xplan_object.get_item_by_reference(reference):
+                data = xplan_item.get_item()
+                self.__append_new_data(object, data)
+
+        print 'Saving to zip file...'
+        output_zip = name + '_new.zip'
+        xml_file = name + '.xml'
+
+        f = open(xml_file, 'w')
+        f.write(self.get_xml())
+        f.close()
 
 
     def extract_objects(self):
@@ -426,14 +458,6 @@ class XPlan:
         f.write(self.get_xml())
         f.close()
 
-    def export_to_xml(self, filename=''):
-        if not filename:
-            filename = self.filename
-
-        f = open(filename, 'w')
-        f.write(self.get_xml())
-        f.close()
-
     def get_xml(self):
         return self.soup.prettify()
 
@@ -447,19 +471,61 @@ class XPlan:
     def get_filename(self):
         return self.filename
 
-    def set_FieldConditionStore(self, condition_type, action_field, operation_value, version, base64data):
-        element = """<object type="FieldConditionStore">
-                        <object field="%s" operator_value="%s" value_xml="%s" version="%s">
-                        </object>
-                    </object>""" % (action_field, str(operation_value), base64data, version)
-        soup = BeautifulSoup(element)
-        return soup
+    def __clear_conditions(self, soap_node):
+        #<object type="List">
+        #</object>
+        #<object type="List">
+        #</object>
+        #<object type="List">
+        #</object>
+        #<object type="List">
+        #</object>
+        #<object type="List">
+        #</object>
+
+        soap_node.clear()
+
+        for i in range(0, 5):
+            object_type = self.soup.new_tag("object")
+            object_type['type'] = "List"
+            soap_node.append(object_type)
+
+    def get_FieldConditionStore(self, data):
+        #<object type="FieldConditionStore">
+        #    <object field="%s" operator_value="%s" value_xml="%s" version="%s">
+        #    </object>
+        #</object>
+        object_type = self.soup.new_tag("object")
+        object_type['type'] = "FieldConditionStore"
+
+        object_field = self.soup.new_tag("object")
+        object_field['field'] = data['x_field']
+        object_field['operator_value'] = str(data['d_operation'])
+        object_field['value_xml'] = data['x_value_in_base64']
+        object_field['version'] = data['x_version']
+
+        object_type.append(object_field)
+
+        return object_type
 
 
-    def set_Condition(self, condition_type, action_field, operator, version, base64data):
-        element = """<object type="Condition">
-                        <object criteria_xml="%s" field="" group="" operator="%s" store_mode="xmlised" value="" version="%s">
-                        <extended_value type="String" value=""/></object>
-                </object>""" % (base64data, operator, version)
-        soup = BeautifulSoup(element)
-        return soup
+    def get_Condition(self, data):
+        #<object type="Condition">
+        #    <object criteria_xml="%s" field="%s" group="%s" operator="%s" store_mode="xmlised" value="" version="%s">
+        #    <extended_value type="String" value=""/></object>
+        #</object>
+
+        object_type = self.soup.new_tag("object")
+        object_type['type'] = "Condition"
+
+        object_field = self.soup.new_tag("object")
+        object_field['criteria_xml'] = data['x_value_in_base64']
+        object_field['field'] = data['x_field']
+        object_field['group'] = data['x_group']
+        object_field['operator'] = data['x_operator']
+        object_field['value'] = ""
+        object_field['version'] = data['x_version']
+
+        object_type.append(object_field)
+
+        return object_type

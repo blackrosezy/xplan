@@ -1,3 +1,4 @@
+import cPickle as pickle
 import base64
 
 import xlsxwriter
@@ -129,16 +130,16 @@ class Excel:
             self.__set_object_type(rows, object_type, worksheet)
             self.__set_operation_column(rows, object_type, worksheet) # Generate drop down
 
-            condition_type = item['x_condition_category']
-            if condition_type:
+            condition_category = item['x_condition_category']
+            if condition_category:
 
-                if condition_type == 'FieldConditionStore':
+                if condition_category == 'FieldConditionStore':
                     worksheet.write(rows, self.OBJECT_TYPE_COLUMN_NUM,
                                     self.othercondition.get_name(item['d_condition_type']), alternate_color)
                     worksheet.write(rows, self.OPERATION_COLUMN_NUM, self.operation.get_name(item['d_operation']),
                                     alternate_color)
                     worksheet.write(rows, self.ACTION_FIELD_COLUMN_NUM, item['d_action_field'], alternate_color)
-                elif condition_type == 'Condition':
+                elif condition_category == 'Condition':
                     worksheet.write(rows, self.OBJECT_TYPE_COLUMN_NUM,
                                     self.subpagecondition.get_name(item['d_condition_type']), alternate_color)
                     worksheet.write(rows, self.OPERATION_COLUMN_NUM, self.operation.get_name(item['d_operation']),
@@ -146,7 +147,7 @@ class Excel:
                     worksheet.write(rows, self.ACTION_FIELD_COLUMN_NUM, item['d_action_field'], locked)
                 worksheet.write(rows, self.VALUE_COLUMN_NUM, item['d_value'], alternate_color)
 
-            worksheet.write(rows, self.KEY_COLUMN_NUM, reference, locked_shrink)
+            worksheet.write(rows, self.KEY_COLUMN_NUM, base64.b64encode(pickle.dumps(item)), locked_shrink)
             rows = rows + 1
 
             if alternate_color == color_1_format:
@@ -170,25 +171,52 @@ class Excel:
             xplan_item = XPlanItem()
 
             j = 1
-            column_data = {}
             for column in row:
-                if j == 1:
+                if j == 2:
                     xplan_item.set_d_object_name(column.value)
-                elif j == 2:
-                    column_data['condition_type'] = column.value
                 elif j == 3:
-                    column_data['action_field'] = column.value
+                    xplan_item.set_d_condition_type(column.value) #temporary assign
                 elif j == 4:
-                    column_data['operation'] = column.value
+                    xplan_item.set_d_action_field(column.value)
                 elif j == 5:
-                    column_data['value'] = column.value
+                    xplan_item.set_d_operation(column.value) #temporary assign
                 elif j == 6:
-                    column_data['reference'] = column.value
-                    #elif j == 7:
-                #    column_data['original_object'] = column.value
+                    xplan_item.set_d_value(column.value)
+                elif j == 7:
+                    # original data
+                    original_data = pickle.loads(base64.b64decode(column.value))
 
+                    # new data from column 2 to 6
+                    new_data = xplan_item.get_item()
+
+                    # update 'd_condition_type' to int
+                    object_type = original_data['x_object_type']
+                    if object_type == 'SubPage':
+                        val = self.subpagecondition.get_value(new_data['d_condition_type'])
+                        xplan_item.set_d_condition_type(val)
+                    else:
+                        val = self.othercondition.get_value(new_data['d_condition_type'])
+                        xplan_item.set_d_condition_type(val)
+
+                    # update 'd_operation' to int
+                    val = self.operation.get_value(new_data['d_operation'])
+                    xplan_item.set_d_operation(val)
+
+                    # set reference
+                    xplan_item.set_d_reference(original_data['d_reference'])
+
+                    #  encode new base64 value
+                    val = base64.b64encode(new_data['d_value'])
+                    xplan_item.set_x_value_in_base64(val)
+
+                    xplan_item.set_x_object_type(original_data['x_object_type'])
+                    xplan_item.set_x_condition_category(original_data['x_condition_category'])
+                    xplan_item.set_x_field(original_data['x_field'])
+                    xplan_item.set_x_group(original_data['x_group'])
+                    xplan_item.set_x_operator(original_data['x_operator'])
+                    xplan_item.set_x_version(original_data['x_version'])
                 j = j + 1
-            column_data['operation_value'] = self.operation.get_value(column_data['operation'])
-            column_data['base64data'] = base64.b64encode(column_data['value'])
-            g_obj.append(column_data)
-        return g_obj
+
+            xplan_object.append_item(xplan_item)
+
+        return xplan_object

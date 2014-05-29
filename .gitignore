@@ -1,4 +1,7 @@
 *.py[co]
+*.zip
+*.xls
+*.xml
 
 # Packages
 *.egg

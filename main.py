@@ -25,7 +25,6 @@ def main():
         if p.load_zip():
             x = Excel()
             p.extract_objects()
-            #p.print_xplan_object()
             p.generate_obj_file()
             x.generate_xls_file(p.get_xplan_object())
 
@@ -34,7 +33,8 @@ def main():
     if args.export_zip:
         p = XPlan()
         x = Excel()
-        p.generate_zip_file(x.get_xls_object())
+        p.generate_zip_file(x.get_xplan_object())
+        print '[Complete]'
 
 
 if __name__ == "__main__":
