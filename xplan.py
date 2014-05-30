@@ -102,7 +102,8 @@ class XPlanItem:
                      'x_field': '',
                      'x_group': '',
                      'x_operator': '',
-                     'x_version': ''}
+                     'x_version': '',
+                     'x_condition_unique_id': ''}
 
     def set_d_object_name(self, value):
         self.item['d_object_name'] = value
@@ -142,6 +143,9 @@ class XPlanItem:
 
     def set_x_version(self, value):
         self.item['x_version'] = value
+
+    def set_x_condition_unique_id(self, value):
+        self.item['x_condition_unique_id'] = value
 
     def set_all(self, new_dict):
         self.item.update(new_dict)
@@ -218,6 +222,35 @@ class XPlan:
 
         return True
 
+    def __update_conditions(self, soap_node, references):
+        #<object type="List">
+        #</object>
+        #<object type="List">
+        #</object>
+        #<object type="List">
+        #</object>
+        #<object type="List">
+        #</object>
+        #<object type="List">
+        #</object>
+
+        found_condition = False
+        for _condition in soap_node.select('object[condition_unique_id]'):
+            for ref in references:
+                item = ref.get_item()
+                if item['x_condition_unique_id'] == _condition.get('condition_unique_id'):
+                    found_condition = ref
+                    if item['x_condition_category'] == 'Condition':
+                        _condition.object['criteria_xml'] = item['x_value_in_base64']
+                    elif item['x_condition_category'] == 'FieldConditionStore':
+                        _condition.object['operator_value'] = item['d_operation']
+                        _condition.object['value_xml'] = item['x_value_in_base64']
+                        _condition.object['field'] = item['d_action_field']
+                    break
+
+            if found_condition:
+                references.remove(found_condition)
+
     def __append_new_data(self, soap_node, data):
         condition_type = data['d_condition_type']
         if condition_type == -100:
@@ -247,9 +280,12 @@ class XPlan:
             if not reference:
                 continue
 
-            self.__clear_conditions(object)
+            found_references = xplan_object.get_item_by_reference(reference)
 
-            for xplan_item in xplan_object.get_item_by_reference(reference):
+            if found_references:  # if found, clear all conditions for that section, preparing for new/updated conditions
+                self.__update_conditions(object, found_references)
+
+            for xplan_item in found_references:
                 data = xplan_item.get_item()
                 self.__append_new_data(object, data)
 
@@ -276,7 +312,7 @@ class XPlan:
         #<conditions type="List">
         #    <object type="List">
         #        <object type="FieldConditionStore">
-        #            <object field="consequences_start_managed__fund" operator_value="4" 
+        #            <object field="consequences_start_managed__fund" operator_value="4"
         #            value_xml="PEw+PHU+MjA8L3U+PC9MPg==" version="2">
         #            </object>
         #        </object>
@@ -360,6 +396,8 @@ class XPlan:
                 for _condition in cat.select('object[type]'):  # grab only <object type="XXXX">
                     found_any_condition = True
                     condition_category = _condition.get('type')
+                    condition_unique_id = uuid.uuid1().bytes.encode('base64').rstrip('=\n').replace('/', '_')
+                    _condition['condition_unique_id'] = condition_unique_id
                     if condition_category == 'Condition':
                         criteria_xml = _condition.object.get('criteria_xml')
                         criteria_xml = criteria_xml.replace('\n', '')
@@ -413,6 +451,7 @@ class XPlan:
                         xplan_item.set_x_group(group)
                         xplan_item.set_x_operator(operator)
                         xplan_item.set_x_version(version)
+                        xplan_item.set_x_condition_unique_id(condition_unique_id)
 
                         self.xplan_object.append_item(xplan_item)
 
@@ -437,6 +476,7 @@ class XPlan:
                         xplan_item.set_x_value_in_base64(value_xml)
                         xplan_item.set_x_field(field)
                         xplan_item.set_x_version(version)
+                        xplan_item.set_x_condition_unique_id(condition_unique_id)
 
                         self.xplan_object.append_item(xplan_item)
 
@@ -477,24 +517,6 @@ class XPlan:
     def get_filename(self):
         return self.filename
 
-    def __clear_conditions(self, soap_node):
-        #<object type="List">
-        #</object>
-        #<object type="List">
-        #</object>
-        #<object type="List">
-        #</object>
-        #<object type="List">
-        #</object>
-        #<object type="List">
-        #</object>
-
-        soap_node.clear()
-
-        for i in range(0, 5):
-            object_type = self.soup.new_tag("object")
-            object_type['type'] = "List"
-            soap_node.append(object_type)
 
     def get_FieldConditionStore(self, data):
         #<object type="FieldConditionStore">

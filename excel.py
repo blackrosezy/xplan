@@ -37,14 +37,16 @@ class Excel:
         self.subpagecondition = SubPageCondition()
         self.othercondition = OtherCondition()
         self.operation = Operation()
-        self.ICON_COLUMN_NUM = 0
-        self.OBJECT_NAME_COLUMN_NUM = 1
-        self.OBJECT_TYPE_COLUMN_NUM = 2
-        self.ACTION_FIELD_COLUMN_NUM = 3
-        self.OPERATION_COLUMN_NUM = 4
-        self.VALUE_COLUMN_NUM = 5
-        self.KEY_COLUMN_NUM = 6
-        self.ORI_OBJ_COLUMN_NUM = 7
+        self.INCLUDE_COLUMN_NUM = 0
+        self.ICON_COLUMN_NUM = 1
+        self.OBJECT_NAME_COLUMN_NUM = 2
+        self.CONDITION_TYPE_COLUMN_NUM = 3
+        self.ACTION_FIELD_COLUMN_NUM = 4
+        self.OPERATION_COLUMN_NUM = 5
+        self.VALUE_COLUMN_NUM = 6
+        self.KEY_COLUMN_NUM = 7
+        self.ORI_OBJ_COLUMN_NUM = 8
+        self.INCLUDE_SYMBOL = '*'
 
 
     def __set_operation_column(self, row_pos, object_type, worksheet):
@@ -56,11 +58,11 @@ class Excel:
 
     def __set_object_type(self, row_pos, object_type, worksheet):
         if object_type == 'SubPage':
-            worksheet.data_validation(row_pos, self.OBJECT_TYPE_COLUMN_NUM, row_pos, self.OBJECT_TYPE_COLUMN_NUM,
+            worksheet.data_validation(row_pos, self.CONDITION_TYPE_COLUMN_NUM, row_pos, self.CONDITION_TYPE_COLUMN_NUM,
                                       {'validate': 'list',
                                        'source': self.subpagecondition.get_names()})
         else:
-            worksheet.data_validation(row_pos, self.OBJECT_TYPE_COLUMN_NUM, row_pos, self.OBJECT_TYPE_COLUMN_NUM,
+            worksheet.data_validation(row_pos, self.CONDITION_TYPE_COLUMN_NUM, row_pos, self.CONDITION_TYPE_COLUMN_NUM,
                                       {'validate': 'list',
                                        'source': self.othercondition.get_names()})
 
@@ -96,21 +98,24 @@ class Excel:
         locked_shrink.set_bg_color('#BDC3C7')
         locked_shrink.set_shrink()
 
-        worksheet.write('A1', '', header_format)
-        worksheet.write('B1', 'Object Name', header_format)
-        worksheet.write('C1', 'Condition Type', header_format)
-        worksheet.write('D1', 'Action Field', header_format)
-        worksheet.write('E1', 'Operation', header_format)
-        worksheet.write('F1', 'Value', header_format)
-        worksheet.write('G1', 'Reference', header_format)
+        worksheet.write(0, self.INCLUDE_COLUMN_NUM, 'Inc.', header_format)
+        worksheet.write(0, self.ICON_COLUMN_NUM, '', header_format)
+        worksheet.write(0, self.OBJECT_NAME_COLUMN_NUM, 'Object Name', header_format)
+        worksheet.write(0, self.CONDITION_TYPE_COLUMN_NUM, 'Condition Type', header_format)
+        worksheet.write(0, self.ACTION_FIELD_COLUMN_NUM, 'Action Field', header_format)
+        worksheet.write(0, self.OPERATION_COLUMN_NUM, 'Operation', header_format)
+        worksheet.write(0, self.VALUE_COLUMN_NUM, 'Value', header_format)
+        worksheet.write(0, self.KEY_COLUMN_NUM, 'Reference', header_format)
 
-        worksheet.set_column('A:A', 2) #Object name column width
-        worksheet.set_column('B:B', 110) #Object name column width
-        worksheet.set_column('C:C', 25) #Condition type column width
-        worksheet.set_column('D:D', 30) #Action Field column width
-        worksheet.set_column('E:E', 15) #Operator column width
-        worksheet.set_column('F:F', 100) #Value column width
-        worksheet.set_column('G:G', 15) #key column width
+        worksheet.set_column(self.INCLUDE_COLUMN_NUM, self.INCLUDE_COLUMN_NUM, 3) #export column width
+        worksheet.set_column(self.ICON_COLUMN_NUM, self.ICON_COLUMN_NUM, 2) #Icon column width
+        worksheet.set_column(self.OBJECT_NAME_COLUMN_NUM, self.OBJECT_NAME_COLUMN_NUM, 110) #Object name column width
+        worksheet.set_column(self.CONDITION_TYPE_COLUMN_NUM, self.CONDITION_TYPE_COLUMN_NUM,
+                             25) #Condition type column width
+        worksheet.set_column(self.ACTION_FIELD_COLUMN_NUM, self.ACTION_FIELD_COLUMN_NUM, 30) #Action Field column width
+        worksheet.set_column(self.OPERATION_COLUMN_NUM, self.OPERATION_COLUMN_NUM, 15) #Operation column width
+        worksheet.set_column(self.VALUE_COLUMN_NUM, self.VALUE_COLUMN_NUM, 100) #Value column width
+        worksheet.set_column(self.KEY_COLUMN_NUM, self.KEY_COLUMN_NUM, 15) #key column width
 
         worksheet.autofilter('B1:B1')
         worksheet.freeze_panes(1, 0)
@@ -127,6 +132,11 @@ class Excel:
                 worksheet.insert_image(rows, self.ICON_COLUMN_NUM, self.icon.get_path(object_type))
                 previous_reference = reference
 
+            worksheet.data_validation(rows, self.INCLUDE_COLUMN_NUM, rows, self.INCLUDE_COLUMN_NUM,
+                                      {'validate': 'list',
+                                       'source': [self.INCLUDE_SYMBOL, '']})
+            worksheet.write(rows, self.INCLUDE_COLUMN_NUM, '')
+
             worksheet.write(rows, self.OBJECT_NAME_COLUMN_NUM, item['d_object_name'], alternate_color)
             self.__set_object_type(rows, object_type, worksheet)
             self.__set_operation_column(rows, object_type, worksheet) # Generate drop down
@@ -135,13 +145,13 @@ class Excel:
             if condition_category:
 
                 if condition_category == 'FieldConditionStore':
-                    worksheet.write(rows, self.OBJECT_TYPE_COLUMN_NUM,
+                    worksheet.write(rows, self.CONDITION_TYPE_COLUMN_NUM,
                                     self.othercondition.get_name(item['d_condition_type']), alternate_color)
                     worksheet.write(rows, self.OPERATION_COLUMN_NUM, self.operation.get_name(item['d_operation']),
                                     alternate_color)
                     worksheet.write(rows, self.ACTION_FIELD_COLUMN_NUM, item['d_action_field'], alternate_color)
                 elif condition_category == 'Condition':
-                    worksheet.write(rows, self.OBJECT_TYPE_COLUMN_NUM,
+                    worksheet.write(rows, self.CONDITION_TYPE_COLUMN_NUM,
                                     self.subpagecondition.get_name(item['d_condition_type']), alternate_color)
                     worksheet.write(rows, self.OPERATION_COLUMN_NUM, self.operation.get_name(item['d_operation']),
                                     locked)
@@ -171,19 +181,23 @@ class Excel:
             row = worksheet.row(i)
             xplan_item = XPlanItem()
 
-            j = 1
+            j = 0
+            include_row = False
             for column in row:
-                if j == 2:
+                if j == self.INCLUDE_COLUMN_NUM:
+                    if column.value.strip() == self.INCLUDE_SYMBOL:
+                        include_row = True
+                if j == self.OBJECT_NAME_COLUMN_NUM:
                     xplan_item.set_d_object_name(column.value)
-                elif j == 3:
+                elif j == self.CONDITION_TYPE_COLUMN_NUM:
                     xplan_item.set_d_condition_type(column.value) #temporary assign
-                elif j == 4:
+                elif j == self.ACTION_FIELD_COLUMN_NUM:
                     xplan_item.set_d_action_field(column.value)
-                elif j == 5:
+                elif j == self.OPERATION_COLUMN_NUM:
                     xplan_item.set_d_operation(column.value) #temporary assign
-                elif j == 6:
+                elif j == self.VALUE_COLUMN_NUM:
                     xplan_item.set_d_value(column.value)
-                elif j == 7:
+                elif j == self.KEY_COLUMN_NUM:
                     # original data
                     original_data = pickle.loads(base64.b64decode(column.value))
 
@@ -228,8 +242,10 @@ class Excel:
                     xplan_item.set_x_group(original_data['x_group'])
                     xplan_item.set_x_operator(original_data['x_operator'])
                     xplan_item.set_x_version(original_data['x_version'])
+                    xplan_item.set_x_condition_unique_id(original_data['x_condition_unique_id'])
                 j = j + 1
 
-            xplan_object.append_item(xplan_item)
+            if include_row:
+                xplan_object.append_item(xplan_item)
 
         return xplan_object
