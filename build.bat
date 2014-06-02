@@ -1,7 +1,7 @@
 @echo off
 
 REM build app
-REM pyuic4 xplan.ui -o xplanUI.py
+start pyuic4 xplan.ui -o xplanUI.py
 pyrcc4 -o resource_rc.py resource.qrc
 
 REM build dist
