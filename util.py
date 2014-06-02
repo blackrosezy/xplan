@@ -1,6 +1,7 @@
 import zipfile
 import tempfile
 import os
+import sys
 import shutil
 
 
@@ -41,3 +42,9 @@ class Util:
         #                zf.extract(name, dest_dir)
         #                break
         #        zf.close()
+
+    @staticmethod
+    def resource_path(relative):
+        if hasattr(sys, "_MEIPASS"):
+            return os.path.join(sys._MEIPASS, relative)
+        return os.path.join(relative)

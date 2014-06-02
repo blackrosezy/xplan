@@ -1,4 +1,5 @@
 import sys
+import logging
 
 from PyQt4 import QtGui, QtCore
 
@@ -7,6 +8,8 @@ from excel import Excel
 
 # Import the interface class
 import xplanUI
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s') # include timestamp
 
 
 class GenericThread(QtCore.QThread):
@@ -37,14 +40,14 @@ class XplanTool(QtGui.QDialog, xplanUI.Ui_Dialog):
             p.extract_objects()
             p.generate_obj_file()
             x.generate_xls_file(p.get_xplan_object())
-        print '[Complete]'
+        logging.info("[Complete]\n\n")
         self.emit(QtCore.SIGNAL('enable_input()'))
 
     def generate_zip(self):
         p = XPlan()
         x = Excel()
         p.generate_zip_file(x.get_xplan_object())
-        print '[Complete]'
+        logging.info("[Complete]\n\n")
         self.emit(QtCore.SIGNAL('enable_input()'))
 
     def enable_input(self):

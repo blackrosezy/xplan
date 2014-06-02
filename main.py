@@ -1,9 +1,10 @@
 import argparse
-import sys
+import sys, logging
 
 from xplan import XPlan
 from excel import Excel
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s') # include timestamp
 
 def main():
     parser = argparse.ArgumentParser(description='XPlan import/export conditions')
@@ -28,13 +29,13 @@ def main():
             p.generate_obj_file()
             x.generate_xls_file(p.get_xplan_object())
 
-        print '[Complete]'
+        logging.info("[Complete]\n\n")
 
     if args.export_zip:
         p = XPlan()
         x = Excel()
         p.generate_zip_file(x.get_xplan_object())
-        print '[Complete]'
+        logging.info("[Complete]\n\n")
 
 
 if __name__ == "__main__":

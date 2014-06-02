@@ -2,11 +2,14 @@ import base64
 import uuid
 import os
 import shutil
+import logging
 
 from bs4 import BeautifulSoup
 import nltk
 
 from util import Util
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s') # include timestamp
 
 
 class Condition:
@@ -183,32 +186,32 @@ class XPlan:
 
     def load_zip(self):
         if not os.path.exists(self.zipfile):
-            print '[error] Cannot find page.zip.'
+            logging.error('[error] Cannot find page.zip.')
             return False
 
         #prepare directory
         try:
             if os.path.isdir(self.tmp_dir):
-                print 'Removing ' + self.tmp_dir + ' folder...'
+                logging.info('Removing ' + self.tmp_dir + ' folder...')
                 shutil.rmtree(self.tmp_dir)
         except Exception as e:
-            print '[error] Cannot delete __tmp__ folder.'
+            logging.error('[error] Cannot delete __tmp__ folder.')
             return False
 
         try:
             os.makedirs(self.tmp_dir)
         except Exception as e:
-            print '[error] Cannot create __tmp__ folder.'
+            logging.error('[error] Cannot create __tmp__ folder.')
             return False
 
         try:
-            print 'Extracting ' + self.zipfile + ' file...'
+            logging.info('Extracting ' + self.zipfile + ' file...')
             Util.unzip(self.zipfile, self.tmp_dir)
         except Exception as e:
-            print '[error] Cannot extract page.zip .'
+            logging.error('[error] Cannot extract page.zip .')
             return False
 
-        print 'Loading xml...'
+        logging.info('Loading xml...')
         path = os.path.join(self.tmp_dir, self.filename)
         self.soup = BeautifulSoup(open(path).read())
 
@@ -217,7 +220,7 @@ class XPlan:
             if os.path.isdir(self.tmp_dir):
                 shutil.rmtree(self.tmp_dir)
         except Exception as e:
-            print '[error] Cannot delete __tmp__ folder.'
+            logging.error('[error] Cannot delete __tmp__ folder.')
             return False
 
         return True
@@ -269,12 +272,12 @@ class XPlan:
 
     def generate_zip_file(self, xplan_object):
         self.xplan_object = xplan_object
-        print 'Loading object file...'
+        logging.info('Loading object file...')
         name = os.path.splitext(os.path.basename(self.filename))[0]
         object_file = name + '_obj.xml'
         self.soup = BeautifulSoup(open(object_file).read())
 
-        print 'Updating object file...'
+        logging.info('Updating object file...')
         for object in self.soup.find_all("conditions", attrs={"type": "List"}):
             reference = object.get('reference')
             if not reference:
@@ -289,7 +292,7 @@ class XPlan:
                 data = xplan_item.get_item()
                 self.__append_new_data(object, data)
 
-        print 'Saving to zip file...'
+        logging.info('Saving to zip file...')
         output_zip = name + '_new.zip'
         xml_file = name + '.xml'
 
@@ -301,7 +304,7 @@ class XPlan:
             shutil.copyfile('page.zip', output_zip)
             Util.append_to_zip(output_zip, xml_file)
         except Exception as e:
-            print '[zip:error] ' + str(e)
+            logging.error('[zip:error] ' + str(e))
 
 
     def extract_objects(self):
@@ -334,7 +337,7 @@ class XPlan:
         #    </object>
         #</conditions>
 
-        print 'Extracting objects...'
+        logging.info('Extracting objects...')
         for object in self.soup.find_all("conditions", attrs={"type": "List"}):  # find all <conditions type="List">
             original_object = object
             found_any_condition = False
@@ -481,7 +484,7 @@ class XPlan:
                         self.xplan_object.append_item(xplan_item)
 
                     else:
-                        print '____________unknown type____________'
+                        logging.warning('____________unknown type____________')
 
                 pos = pos + 1
 
@@ -498,7 +501,7 @@ class XPlan:
         return self.xplan_object
 
     def generate_obj_file(self):
-        print 'Saving object file...'
+        logging.info('Saving object file...')
         name = os.path.splitext(os.path.basename(self.filename))[0]
         f = open(name + '_obj.xml', 'w')
         f.write(self.get_xml())

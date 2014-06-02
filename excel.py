@@ -1,33 +1,36 @@
 import cPickle as pickle
 import base64
+import os, logging
 
 import xlsxwriter
 import xlrd
 
 from xplan import Operation, SubPageCondition, OtherCondition, XPlanObject, XPlanItem
+from util import Util
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s') # include timestamp
 
 class Icon:
     def __init__(self):
-        self.icons = {'Title': 'images/title.png',
-                      'Gap': 'images/gap.png',
-                      'Text': 'images/text.png',
-                      'Field': 'images/field.png',
-                      'SubPage': 'images/page.png',
-                      'Group': 'images/group.png',
-                      'Xplan': 'images/xplan.png',
-                      'Newspeedgroup': 'images/newspeedgroup.png',
-                      'Speedgroup': 'images/speedgroup.png',
-                      'IFrame': 'images/iframe.png',
-                      'Xtool': 'images/xtool.png',
+        self.icons = {'Title': Util.resource_path(os.path.join('images', 'title.png')),
+                      'Gap': Util.resource_path(os.path.join('images', 'gap.png')),
+                      'Text': Util.resource_path(os.path.join('images', 'text.png')),
+                      'Field': Util.resource_path(os.path.join('images', 'field.png')),
+                      'SubPage': Util.resource_path(os.path.join('images', 'page.png')),
+                      'Group': Util.resource_path(os.path.join('images', 'group.png')),
+                      'Xplan': Util.resource_path(os.path.join('images', 'xplan.png')),
+                      'Newspeedgroup': Util.resource_path(os.path.join('images', 'newspeedgroup.png')),
+                      'Speedgroup': Util.resource_path(os.path.join('images', 'speedgroup.png')),
+                      'IFrame': Util.resource_path(os.path.join('images', 'iframe.png')),
+                      'Xtool': Util.resource_path(os.path.join('images', 'xtool.png')),
         }
 
     def get_path(self, name):
         try:
             return self.icons[name]
         except:
-            print '[info] unknown icon of ' + name
-            return 'images/unknown.png'
+            logging.warning('[info] unknown icon of ' + name)
+            return Util.resource_path(os.path.join('images', 'unknown.png'))
 
 
 class Excel:
@@ -67,7 +70,7 @@ class Excel:
                                        'source': self.othercondition.get_names()})
 
     def generate_xls_file(self, xplan_object):
-        print 'Generating excel file...'
+        logging.info('Generating excel file...')
         workbook = xlsxwriter.Workbook(self.filename, {'constant_memory': True})
         worksheet = workbook.add_worksheet()
 
