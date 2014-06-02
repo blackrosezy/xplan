@@ -9,13 +9,28 @@ from excel import Excel
 import xplanUI
 
 
+class GenericThread(QtCore.QThread):
+    def __init__(self, function, *args, **kwargs):
+        QtCore.QThread.__init__(self)
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        self.function(*self.args, **self.kwargs)
+        return
+
+
 class XplanTool(QtGui.QDialog, xplanUI.Ui_Dialog):
     def __init__(self, parent=None):
         super(XplanTool, self).__init__(parent)
         self.setupUi(self)
+        QtCore.QObject.connect(self, QtCore.SIGNAL("enable_input()"), self.enable_input)
 
-    def btn_excel_clicked(self):
-        self.pushButton_excel.setEnabled(False)
+    def generate_excel(self):
         p = XPlan()
         if p.load_zip():
             x = Excel()
@@ -23,15 +38,32 @@ class XplanTool(QtGui.QDialog, xplanUI.Ui_Dialog):
             p.generate_obj_file()
             x.generate_xls_file(p.get_xplan_object())
         print '[Complete]'
-        self.pushButton_excel.setEnabled(True)
+        self.emit(QtCore.SIGNAL('enable_input()'))
 
-    def btn_zip_clicked(self):
-        self.pushButton_zip.setEnabled(False)
+    def generate_zip(self):
         p = XPlan()
         x = Excel()
         p.generate_zip_file(x.get_xplan_object())
         print '[Complete]'
+        self.emit(QtCore.SIGNAL('enable_input()'))
+
+    def enable_input(self):
+        self.pushButton_excel.setEnabled(True)
         self.pushButton_zip.setEnabled(True)
+
+    def disable_input(self):
+        self.pushButton_excel.setEnabled(False)
+        self.pushButton_zip.setEnabled(False)
+
+    def btn_excel_clicked(self):
+        self.disable_input()
+        self.genericThread = GenericThread(self.generate_excel)
+        self.genericThread.start()
+
+    def btn_zip_clicked(self):
+        self.disable_input()
+        self.genericThread = GenericThread(self.generate_zip)
+        self.genericThread.start()
 
     def main(self):
         self.show()
