@@ -18,7 +18,7 @@ def extra_datas(mydir):
     return extra_datas
 ###########################################
 
-a = Analysis(['main.py'],
+a = Analysis(['dialog.py'],
              pathex=['C:\\rozi\\xplan\\xplantool'],
              hiddenimports=[],
              hookspath=None,
@@ -30,7 +30,7 @@ exe = EXE(pyz,
           a.binaries,
           a.zipfiles,
           a.datas,
-          name='main.exe',
+          name='xplantool.exe',
           debug=False,
           strip=None,
           upx=True,

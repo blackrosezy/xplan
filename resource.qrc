@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="icon">
+    <file alias="excel">images/excel.png</file>
+    <file alias="app_icon">icon.ico</file>
+    <file alias="zip">images/zip.png</file>
+  </qresource>
+</RCC>

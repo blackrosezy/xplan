@@ -1,40 +1,44 @@
-from ttk import Frame, Button, Style
-from Tkinter import Tk, BOTH
-import tkMessageBox as box
+import sys
 
-class MainDlg(Frame):
+from PyQt4 import QtGui, QtCore
 
-    def __init__(self, parent):
-        Frame.__init__(self, parent)
+from xplan import XPlan
+from excel import Excel
 
-        self.parent = parent
-        self.initUI()
-
-    def initUI(self):
-
-        self.parent.title("Message boxes")
-        self.style = Style()
-        self.style.theme_use("default")
-        self.pack()
-
-        error = Button(self, text="Error", command=self.onError)
-        error.grid()
-        warning = Button(self, text="Warning", command=self.onWarn)
-        warning.grid(row=1, column=0)
-        question = Button(self, text="Question", command=self.onQuest)
-        question.grid(row=0, column=1)
-        inform = Button(self, text="Information", command=self.onInfo)
-        inform.grid(row=1, column=1)
+# Import the interface class
+import xplanUI
 
 
-    def onError(self):
-        box.showerror("Error", "Could not open file")
+class XplanTool(QtGui.QDialog, xplanUI.Ui_Dialog):
+    def __init__(self, parent=None):
+        super(XplanTool, self).__init__(parent)
+        self.setupUi(self)
 
-    def onWarn(self):
-        box.showwarning("Warning", "Deprecated function call")
+    def btn_excel_clicked(self):
+        self.pushButton_excel.setEnabled(False)
+        p = XPlan()
+        if p.load_zip():
+            x = Excel()
+            p.extract_objects()
+            p.generate_obj_file()
+            x.generate_xls_file(p.get_xplan_object())
+        print '[Complete]'
+        self.pushButton_excel.setEnabled(True)
 
-    def onQuest(self):
-        box.askquestion("Question", "Are you sure to quit?")
+    def btn_zip_clicked(self):
+        self.pushButton_zip.setEnabled(False)
+        p = XPlan()
+        x = Excel()
+        p.generate_zip_file(x.get_xplan_object())
+        print '[Complete]'
+        self.pushButton_zip.setEnabled(True)
 
-    def onInfo(self):
-        box.showinfo("Information", "Download completed")
+    def main(self):
+        self.show()
+
+
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    xplantool = XplanTool()
+    xplantool.main()
+    app.exec_()
