@@ -9,17 +9,17 @@ from xplan import Operation, SubPageCondition, OtherCondition, XPlanObject, XPla
 
 class Icon:
     def __init__(self):
-        self.icons = {'Title': 'icons/title.png',
-                      'Gap': 'icons/gap.png',
-                      'Text': 'icons/text.png',
-                      'Field': 'icons/field.png',
-                      'SubPage': 'icons/page.png',
-                      'Group': 'icons/group.png',
-                      'Xplan': 'icons/xplan.png',
-                      'Newspeedgroup': 'icons/newspeedgroup.png',
-                      'Speedgroup': 'icons/speedgroup.png',
-                      'IFrame': 'icons/iframe.png',
-                      'Xtool': 'icons/xtool.png',
+        self.icons = {'Title': 'images/title.png',
+                      'Gap': 'images/gap.png',
+                      'Text': 'images/text.png',
+                      'Field': 'images/field.png',
+                      'SubPage': 'images/page.png',
+                      'Group': 'images/group.png',
+                      'Xplan': 'images/xplan.png',
+                      'Newspeedgroup': 'images/newspeedgroup.png',
+                      'Speedgroup': 'images/speedgroup.png',
+                      'IFrame': 'images/iframe.png',
+                      'Xtool': 'images/xtool.png',
         }
 
     def get_path(self, name):
@@ -27,7 +27,7 @@ class Icon:
             return self.icons[name]
         except:
             print '[info] unknown icon of ' + name
-            return 'icons/unknown.png'
+            return 'images/unknown.png'
 
 
 class Excel:
