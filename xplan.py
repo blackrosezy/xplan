@@ -236,7 +236,8 @@ class XPlan:
         #</object>
         #<object type="List">
         #</object>
-
+        tmp_items = []
+        tmp_item = {'pos': -100, 'value': None}
         found_condition = False
         for _condition in soap_node.select('object[condition_unique_id]'):
             for ref in references:
@@ -245,13 +246,31 @@ class XPlan:
                     found_condition = ref
                     if item['x_condition_category'] == 'Condition':
                         _condition.object['criteria_xml'] = item['x_value_in_base64']
+
+                        extracted_val = _condition.extract()
+                        tmp_item['pos'] = item['d_condition_type']
+                        tmp_item['value'] = extracted_val
+                        tmp_items.append(tmp_item)
+
                     elif item['x_condition_category'] == 'FieldConditionStore':
                         _condition.object['operator_value'] = item['d_operation']
                         _condition.object['value_xml'] = item['x_value_in_base64']
                         _condition.object['field'] = item['d_action_field']
+
+                        extracted_val = _condition.extract()
+                        tmp_item['pos'] = item['d_condition_type']
+                        tmp_item['value'] = extracted_val
+                        tmp_items.append(tmp_item)
                     break
 
             if found_condition:
+                counter = 0
+                for condition in soap_node.find_all("object", attrs={"type": "List"}):  # find all <object type="List">
+                    for item in tmp_items:
+                        if item['pos'] == counter:
+                            condition.append(item['value'])
+                    counter = counter + 1
+
                 references.remove(found_condition)
 
     def __append_new_data(self, soap_node, data):
