@@ -35,7 +35,7 @@ class Icon:
 
 class Excel:
     def __init__(self):
-        self.filename = 'page.xls'
+        self.filename = 'page.xlsx'
         self.icon = Icon()
         self.subpagecondition = SubPageCondition()
         self.othercondition = OtherCondition()

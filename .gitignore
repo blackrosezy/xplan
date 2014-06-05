@@ -1,6 +1,6 @@
 *.py[co]
 *.zip
-*.xls
+*.xlsx
 *.xml
 
 # Packages
